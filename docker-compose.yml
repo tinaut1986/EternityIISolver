@@ -2,8 +2,6 @@ services:
   server:
     build: .
     container_name: eternity-server
-    ports:
-      - "${SERVER_PORT:-5210}:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Server=${DB_SERVER};Database=${DB_NAME};User=${DB_USER};Password=${DB_PASSWORD};
       - ASPNETCORE_ENVIRONMENT=${ASPNET_ENV:-Development}
