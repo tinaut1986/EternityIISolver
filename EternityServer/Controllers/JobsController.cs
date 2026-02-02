@@ -221,8 +221,14 @@ public class JobsController : ControllerBase
     public async Task<IActionResult> GetStats()
     {
         var totalJobs = await _context.Jobs.CountAsync();
+        var pendingJobs = await _context.Jobs.CountAsync(j => j.Status == JobStatus.Pending);
+        var assignedJobs = await _context.Jobs.CountAsync(j => j.Status == JobStatus.Assigned);
+        var completedJobs = await _context.Jobs.CountAsync(j => j.Status == JobStatus.Completed);
+        var splitParentJobs = await _context.Jobs.CountAsync(j => j.Status == JobStatus.SplitParent);
         var solvedJobs = await _context.Jobs.CountAsync(j => j.Status == JobStatus.Solved);
-        var processedJobs = await _context.Jobs.CountAsync(j => j.Status == JobStatus.Completed);
+        
+        // Sum all nodes visited across all jobs
+        var totalNodesVisited = await _context.Jobs.SumAsync(j => j.NodesVisited);
         
         var bestJob = await _context.Jobs
             .Where(j => j.MaxDepthFound > 0)
@@ -230,20 +236,34 @@ public class JobsController : ControllerBase
             .FirstOrDefaultAsync() 
             ?? await _context.Jobs.OrderBy(j => j.Id).FirstOrDefaultAsync();
 
+        // Get active workers (unique worker IDs with assigned jobs)
+        var activeWorkers = await _context.Jobs
+            .Where(j => j.Status == JobStatus.Assigned)
+            .Select(j => j.AssignedWorkerId)
+            .Distinct()
+            .CountAsync();
+
         return Ok(new
         {
+            // Job counts by status
             TotalJobs = totalJobs,
+            PendingJobs = pendingJobs,
+            AssignedJobs = assignedJobs,
+            CompletedJobs = completedJobs,
+            SplitParentJobs = splitParentJobs,
             SolvedJobs = solvedJobs,
-            ProcessedJobs = processedJobs,
+            
+            // Progress metrics
+            TotalNodesVisited = totalNodesVisited,
             BestDepth = bestJob?.MaxDepthFound ?? 0,
+            
+            // Workers
+            ActiveWorkers = activeWorkers,
+            
+            // Best board
             BestBoardBase64 = bestJob?.BestBoardState != null 
                 ? Convert.ToBase64String(bestJob.BestBoardState) 
-                : (bestJob?.BoardPayload != null ? Convert.ToBase64String(bestJob.BoardPayload) : null),
-            Workers = await _context.Jobs
-                .Where(j => j.Status == JobStatus.Assigned)
-                .Select(j => j.AssignedWorkerId)
-                .Distinct()
-                .CountAsync()
+                : (bestJob?.BoardPayload != null ? Convert.ToBase64String(bestJob.BoardPayload) : null)
         });
     }
 
