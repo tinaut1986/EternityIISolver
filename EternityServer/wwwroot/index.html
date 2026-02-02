@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eternity II - Live Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            width: 100%;
+            padding: 1.5rem;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            border-bottom: 1px solid #334155;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .stats-container {
+            display: flex;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+        .stat-value { color: var(--accent); font-size: 1.8rem; font-weight: 800; }
+        .stat-label { font-size: 0.75rem; text-transform: uppercase; opacity: 0.6; }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(16, 50px);
+            grid-template-rows: repeat(16, 50px);
+            gap: 1px;
+            background: #334155;
+            padding: 2px;
+            border-radius: 4px;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            background: #0f172a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Triangular parts using images */
+        .triangle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            pointer-events: none;
+        }
+        .top    { clip-path: polygon(0 0, 100% 0, 50% 50%); }
+        .right  { clip-path: polygon(100% 0, 100% 100%, 50% 50%); }
+        .bottom { clip-path: polygon(0 100%, 100% 100%, 50% 50%); }
+        .left   { clip-path: polygon(0 0, 0 100%, 50% 50%); }
+
+        .empty-cell { background: #020617; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Eternity II Live Processor</h1>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div id="stat-depth" class="stat-value">0</div>
+            <div class="stat-label">Best Depth</div>
+        </div>
+        <div class="stat-card">
+            <div id="stat-workers" class="stat-value">0</div>
+            <div class="stat-label">Active Workers</div>
+        </div>
+    </div>
+
+    <div id="board" class="board"></div>
+
+    <script>
+        let piecesMap = new Map();
+
+        async function init() {
+            const resp = await fetch('/api/jobs/pieces');
+            const pieces = await resp.json();
+            pieces.forEach(p => piecesMap.set(p.id, p));
+
+            const board = document.getElementById('board');
+            for (let i = 0; i < 256; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell empty-cell';
+                cell.id = `cell-${i}`;
+                board.appendChild(cell);
+            }
+
+            refresh();
+            setInterval(refresh, 5000);
+        }
+
+        async function refresh() {
+            try {
+                const resp = await fetch('/api/jobs/stats');
+                const data = await resp.json();
+                document.getElementById('stat-depth').innerText = `${data.bestDepth}/256`;
+                document.getElementById('stat-workers').innerText = data.workers;
+
+                if (data.bestBoardBase64) render(data.bestBoardBase64);
+            } catch(e) {}
+        }
+
+        function createTriangle(patternId, positionClass, rotation = 0) {
+            if (patternId === 0) return ''; // Border color is black bg
+            return `<div class="triangle ${positionClass}" 
+                        style="background-image: url('/pieces/pattern${patternId}.svg'); 
+                               transform: rotate(${rotation}deg)"></div>`;
+        }
+
+        function render(base64) {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+            // Clean classes
+            document.querySelectorAll('.cell').forEach(c => {
+                c.innerHTML = '';
+                c.classList.add('empty-cell');
+            });
+
+            for (let i = 0; i < bytes.length; i += 4) {
+                const id = bytes[i] | (bytes[i+1] << 8);
+                const pos = bytes[i+2];
+                const rot = bytes[i+3];
+                const p = piecesMap.get(id);
+                if (!p) continue;
+
+                // Logical rotation of the piece to match visual triangles
+                let colors = [p.top, p.right, p.bottom, p.left];
+                for(let r=0; r<rot; r++) { colors.unshift(colors.pop()); }
+
+                const cell = document.getElementById(`cell-${pos}`);
+                cell.classList.remove('empty-cell');
+                cell.innerHTML = `
+                    ${createTriangle(colors[0], 'top')}
+                    ${createTriangle(colors[1], 'right')}
+                    ${createTriangle(colors[2], 'bottom')}
+                    ${createTriangle(colors[3], 'left')}
+                `;
+            }
+        }
+        init();
+    </script>
+</body>
+</html>

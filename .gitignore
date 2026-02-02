@@ -1,0 +1,88 @@
+# =========================
+# .NET Core / C#
+# =========================
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+
+# =========================
+# IDE / Editors
+# =========================
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.idea/
+*.swp
+*~
+
+# =========================
+# Build Results
+# =========================
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# =========================
+# NuGet
+# =========================
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# =========================
+# Sensitive Configuration
+# =========================
+# The actual config files contain credentials and IPs
+# Use the .template files as reference and create your own
+EternityServer/appsettings.json
+EternityServer/appsettings.Development.json
+EternityWorker/appsettings.json
+.env
+
+# =========================
+# Database / Migrations
+# =========================
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# =========================
+# Docker
+# =========================
+# docker-compose.override.yml  # Uncomment if you use local overrides
+
+# =========================
+# OS Generated
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Temp / Backup
+# =========================
+*.tmp
+*.temp
+*.bak
+*~

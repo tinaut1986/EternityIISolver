@@ -1,0 +1,6 @@
+@EternityServer_HostAddress = http://localhost:5210
+
+GET {{EternityServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
