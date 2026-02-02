@@ -172,7 +172,36 @@ El dashboard muestra:
 
 ### Sistema de Split (División de Trabajo)
 
-Cuando el tiempo se agota, el Worker genera **subjobs** para distribuir el trabajo:
+Cuando el tiempo se agota, el Worker genera **subjobs** de forma inteligente:
+
+#### Comportamiento Básico
+El Worker genera splits desde la **posición actual** del tablero, no desde la raíz:
+```
+Job recibe: [A en 0,0] → explora desde [0,1]
+├── Prueba X → completo → NO_SOLUTION
+├── Prueba Y → completo → NO_SOLUTION  
+└── Prueba Z → explorando profundo → TIMEOUT en [8,5]
+
+Estado al timeout: [A, Z, ...más piezas...] (150 piezas)
+Split: Genera subjobs desde [8,5] con las 150 piezas ya colocadas
+→ Los subjobs heredan TODO el progreso, no empiezan de cero.
+```
+
+#### Backtracking Inteligente
+Si no hay piezas válidas en la posición actual, el Worker **sube de nivel**:
+```
+Timeout en [0,7] → 0 piezas encajan aquí
+├── Backtrack: quitar pieza de [0,6]
+├── Generar splits en [0,6] → excluyendo piezas ya probadas
+│   Ya probadas: [W, V] → excluidas
+│   Disponibles: [U, T, S] → 3 subjobs
+└── ¡Éxito!
+```
+
+#### Evita Re-exploración
+El sistema trackea qué piezas se han probado **completamente** en cada posición:
+- Si una pieza se probó y su rama entera falló → se excluye del split.
+- Solo se generan subjobs para hermanos **no explorados**.
 
 ```
 Job 1 (raíz, 5 hints)
@@ -184,11 +213,11 @@ Job 1 (raíz, 5 hints)
     ├── Job 4 (hint + pieza C en [0,0])
     └── Job 5 (hint + pieza D en [0,0])
          │
-         ├── [10min] → SPLIT
+         ├── [10min] → SPLIT desde posición actual
          │
-         ├── Job 6 (hint + D + pieza X en [0,1])
-         ├── Job 7 (hint + D + pieza Y en [0,1])
-         └── ...
+         ├── Job 6 (D + camino explorado + pieza X en [5,3])
+         ├── Job 7 (D + camino explorado + pieza Y en [5,3])
+         └── ... (hermanos no explorados)
 ```
 
 ### Tiempo Límite Dinámico
