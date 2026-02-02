@@ -20,18 +20,21 @@ Este proyecto es un sistema distribuido diseñado para resolver el puzzle **Eter
 ```
 Eternity II/
 ├── EternityServer/          # API REST (ASP.NET Core 9)
+│   ├── appsettings.template.json # Plantilla de configuración
 │   ├── Controllers/         # Endpoints de la API
-│   ├── Data/               # Entity Framework DbContext
-│   ├── Models/             # Modelos de base de datos (Job, Solution)
-│   ├── Services/           # Servicios de fondo (ZombieJobCleaner)
-│   └── wwwroot/            # Dashboard web estático
+│   ├── Models/             # Modelos de base de datos
+│   └── wwwroot/            # Dashboard web
 ├── EternityWorker/          # Aplicación de consola (solver)
-│   └── Services/           # SolverService, ApiClient
+│   ├── appsettings.template.json # Plantilla de configuración
+│   └── Services/           # Lógica del solver
 ├── EternityShared/          # Biblioteca compartida
-│   ├── Dtos/               # Data Transfer Objects para la API
-│   └── Game/               # Lógica del puzzle (Board, Piece, etc.)
-├── eternity2_256.csv        # Definición de las 256 piezas
-└── eternity2_256_all_hints.csv  # Pistas oficiales (5 piezas fijas)
+│   └── Game/               # Lógica del puzzle (Board, Piece)
+├── Data/                   # Archivos de datos del puzzle
+│   ├── eternity2_256.csv    # Definición de las 256 piezas
+│   └── eternity2_256_all_hints.csv # Pistas oficiales
+├── DistributedEternitySolver.sln # Solución de Visual Studio
+├── docker-compose.yml       # Orquestación de contenedores
+└── README.md                # Esta documentación
 ```
 
 ---
