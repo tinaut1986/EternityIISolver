@@ -120,10 +120,14 @@ cd EternityWorker
 dotnet run
 ```
 
-Al iniciar, el Worker pregunta por el modo de carga:
-1. **Background (15%)** - Usa pocos núcleos, para no interferir con otras tareas.
-2. **Balanced (50%)** - Usa la mitad de los núcleos disponibles.
-3. **Turbo (100%)** - Usa todos los núcleos para máxima velocidad.
+Al iniciar, el Worker presenta un **menú interactivo** (flechas ↑↓ y Enter):
+- **Background Mode (~15% CPU)**: Usa pocos núcleos, ideal para no interferir con otras tareas.
+- **Balanced Mode (~50% CPU)**: Usa la mitad de los hilos lógicos de tu CPU.
+- **Turbo Mode (100% CPU)**: Usa todos los hilos para máxima velocidad de exploración.
+- **Exit / Cancel**: Cierra el programa de forma segura.
+
+### Prevención de Suspensión (Windows)
+El Worker detecta si estás en Windows y **evita que el equipo entre en suspensión** automáticamente mientras está trabajando. Esto permite dejar el ordenador encendido toda la noche sin riesgo de que se pause la exploración.
 
 ---
 
@@ -131,10 +135,12 @@ Al iniciar, el Worker pregunta por el modo de carga:
 
 Accede al dashboard en: `http://TU_SERVIDOR:PUERTO/`
 
-El dashboard muestra:
-- **Best Depth**: La profundidad máxima alcanzada (X/256 piezas colocadas).
-- **Active Workers**: Número de workers activos en este momento.
-- **Tablero Visual**: Representación gráfica del mejor tablero encontrado hasta ahora.
+El dashboard es una SPA (Single Page Application) que se actualiza cada 3 segundos y muestra:
+- **Best Depth**: La profundidad máxima alcanzada (X/256 piezas colocadas) con una **barra de progreso visual**.
+- **Active Workers**: Número de threads trabajando activamente en el puzzle.
+- **Job Pipeline**: Contador de trabajos Pendientes, En Proceso y Completados.
+- **Total Nodes Explored**: El esfuerzo total acumulado del sistema (en Millones, Billones o Trillones de nodos).
+- **Tablero Visual**: Representación gráfica del mejor tablero encontrado (permite ver qué patrones están fallando).
 
 ---
 
