@@ -24,6 +24,7 @@ public class SolverService
     private long _leafChecksum;
     private int _maxDepth;
     private byte[]? _bestBoard;
+    private DateTime _startTime;
 
     public SolverService(List<Piece> allPieces, string base64Payload)
     {
@@ -73,6 +74,7 @@ public class SolverService
         _maxDepth = _initiallyUsedPieceIds.Count;
         _bestBoard = null;
         _triedPiecesAtPosition.Clear();
+        _startTime = DateTime.Now;
 
         // Find first empty cell
         int startR = -1, startC = -1;
@@ -117,7 +119,8 @@ public class SolverService
         
         if ((_nodesVisited & 0xFFFFF) == 0) 
         {
-            Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Progress: {_nodesVisited:N0} nodes...");
+            TimeSpan elapsed = DateTime.Now - _startTime;
+            Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Progress: {_nodesVisited:N0} nodes... Elapsed: {elapsed.ToString(@"mm\:ss")}");
             ct.ThrowIfCancellationRequested();
         }
 

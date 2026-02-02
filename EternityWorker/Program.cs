@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // Windows API to prevent sleep
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
-    SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+    NativeMethods.SetThreadExecutionState(NativeMethods.EXECUTION_STATE.ES_CONTINUOUS | NativeMethods.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
 }
 
 var configuration = new ConfigurationBuilder()
@@ -41,18 +41,6 @@ finally
     // Restore normal sleep behavior on exit
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     {
-        SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+        NativeMethods.SetThreadExecutionState(NativeMethods.EXECUTION_STATE.ES_CONTINUOUS);
     }
 }
-
-// Windows API declarations
-[Flags]
-enum EXECUTION_STATE : uint
-{
-    ES_CONTINUOUS = 0x80000000,
-    ES_SYSTEM_REQUIRED = 0x00000001,
-    ES_DISPLAY_REQUIRED = 0x00000002  // Also keeps display on, optional
-}
-
-[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);

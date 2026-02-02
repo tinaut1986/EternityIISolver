@@ -1,3 +1,4 @@
+using System;
 using EternityWorker.Services;
 using EternityShared.Game;
 using EternityShared.Dtos;
@@ -33,12 +34,15 @@ public class Worker
     private async Task RunSingleLoopAsync(List<Piece> allPieces, int threadId)
     {
         string threadWorkerId = $"{_workerId}-{threadId}";
+        DateTime threadStartTime = DateTime.Now;
+        
         while (true)
         {
             EternityShared.Dtos.JobResponseDto? job = null;
             try
             {
-                Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Thread {threadId} requesting job...");
+                TimeSpan uptime = DateTime.Now - threadStartTime;
+                Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Thread {threadId} (Uptime: {uptime.ToString(@"hh\:mm\:ss")}) requesting job...");
                 job = await _apiClient.RequestJobAsync(threadWorkerId);
             }
             catch (Exception ex)
@@ -53,6 +57,7 @@ public class Worker
                 continue;
             }
 
+            DateTime jobStartTime = DateTime.Now;
             Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Thread {threadId}: Job {job.JobId} started. Solving...");
 
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(job.TimeLimitSeconds));
@@ -64,13 +69,17 @@ public class Worker
                     {
                         await Task.Delay(30000, cts.Token); 
                         await _apiClient.SendHeartbeatAsync(job.JobId, threadWorkerId);
-                        Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Heartbeat sent for Job {job.JobId} (Thread {threadId}).");
+                        
+                        TimeSpan jobElapsed = DateTime.Now - jobStartTime;
+                        Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Heartbeat sent for Job {job.JobId} (Thread {threadId}). Elapsed: {jobElapsed.ToString(@"mm\:ss")}/{TimeSpan.FromSeconds(job.TimeLimitSeconds).ToString(@"mm\:ss")}");
                     }
                 } catch {}
             });
 
             var solver = new SolverService(allPieces, job.BoardPayloadBase64);
             var (result, data, splits, nodes, checksum, maxDepth, bestBoard) = await solver.SolveAsync(cts.Token);
+
+            TimeSpan totalJobTime = DateTime.Now - jobStartTime;
 
             if (result == "SPLIT" && (splits == null || splits.Count == 0))
             {
@@ -80,7 +89,7 @@ public class Worker
 
             if (result == "SPLIT")
             {
-                Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Thread {threadId}: Job {job.JobId} split into {splits?.Count ?? 0} subjobs. Best depth: {maxDepth}/256. Nodes: {nodes:N0}.");
+                Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Thread {threadId}: Job {job.JobId} split into {splits?.Count ?? 0} subjobs center. Best depth: {maxDepth}/256. Nodes: {nodes:N0}. Duration: {totalJobTime.ToString(@"hh\:mm\:ss")}");
                 await _apiClient.ReportSplitAsync(new ReportSplitDto
                 {
                     JobId = job.JobId,
@@ -94,7 +103,7 @@ public class Worker
             }
             else
             {
-                Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Thread {threadId}: Job {job.JobId} completed ({result}). Best depth: {maxDepth}/256. Nodes: {nodes:N0}.");
+                Console.WriteLine($"[{DateTime.Now:H:mm:ss}] Thread {threadId}: Job {job.JobId} completed ({result}). Best depth: {maxDepth}/256. Nodes: {nodes:N0}. Duration: {totalJobTime.ToString(@"hh\:mm\:ss")}");
                 await _apiClient.ReportSuccessAsync(new ReportSuccessDto
                 {
                     JobId = job.JobId,
